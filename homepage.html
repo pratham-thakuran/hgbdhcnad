@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Disaster Relief Hub</title>
+  <!-- Google Fonts for modern typography -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+  <!-- Leaflet CSS for the live map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    /* Global Styles */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: #f8f8f8;
+      color: #000;
+      margin: 0;
+      padding: 0;
+    }
+    /* Header */
+    header {
+      background-color: #004080;
+      color: #fff;
+      padding: 15px 10px;
+      text-align: center;
+      border-bottom: 2px solid #003366;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      animation: fadeIn 1s ease-in-out;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    header h1 {
+      font-size: 28px;
+      margin: 5px;
+    }
+    /* Sidebar (Popup Dashboard) */
+    .sidebar {
+      height: 100%;
+      width: 250px;
+      position: fixed;
+      z-index: 2000;
+      top: 0;
+      right: -250px; /* Hidden by default */
+      background-color: #004080;
+      overflow-x: hidden;
+      transition: 0.5s;
+      padding-top: 60px;
+    }
+    .sidebar a {
+      padding: 8px 8px 8px 32px;
+      text-decoration: none;
+      font-size: 20px;
+      color: #fff;
+      display: block;
+      transition: 0.3s;
+    }
+    .sidebar a:hover {
+      color: #f1f1f1;
+    }
+    .sidebar .closebtn {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 36px;
+      margin-left: 0;
+    }
+    /* Open Sidebar Button - only the hamburger icon */
+    #openSidebarBtn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: #004080;
+      color: #fff;
+      border: none;
+      padding: 10px 12px;
+      font-size: 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      z-index: 2001;
+      transition: background-color 0.3s;
+    }
+    #openSidebarBtn:hover {
+      background-color: #003366;
+    }
+    /* Hero Section */
+    .hero {
+      position: relative;
+      background: 
+        linear-gradient(45deg, rgba(255,255,255,0.8), rgba(240,240,255,0.8)),
+        url('https://source.unsplash.com/1600x900/?disaster,relief');
+      background-size: cover;
+      background-position: center;
+      padding: 50px 20px;
+      text-align: center;
+      border-bottom: 2px solid #003366;
+      animation: backgroundShift 10s infinite alternate, fadeIn 1s ease-in-out;
+    }
+    .hero h2 {
+      font-size: 36px;
+      margin: 20px 0 10px;
+      color: #003366;
+      text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+    }
+    /* Added Subheading */
+    .hero h3 {
+      font-size: 24px;
+      margin: 10px 0;
+      color: #003366;
+      font-weight: 400;
+    }
+    .hero p {
+      font-size: 18px;
+      margin: 10px 0 20px;
+      color: #003366;
+      text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+    }
+    .hero button {
+      background-color: #cc0000;
+      color: #fff;
+      border: none;
+      padding: 12px 30px;
+      font-size: 18px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      border-radius: 4px;
+    }
+    .hero button:hover {
+      background-color: #a30000;
+    }
+    /* Features Section */
+    .features {
+      display: flex;
+      flex-direction: column-reverse; /* Reverses the vertical order */
+      align-items: center;
+      margin: 30px 0;
+      padding: 10px;
+    }
+    .feature {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      padding: 20px;
+      width: 40%;           /* Reduced width for balance */
+      /* Removed forced square shape */
+      min-height: 300px;    /* Ensures a rectangular appearance */
+      text-align: center;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      overflow: auto;
+      transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+      opacity: 0;
+      animation: fadeInUp 0.8s forwards;
+      border-radius: 8px;
+    }
+    .feature:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .feature h3 {
+      font-size: 20px;
+      margin-bottom: 12px;
+      color: #004080;
+    }
+    .feature p {
+      font-size: 16px;
+      margin-bottom: 12px;
+      padding: 0 10px;
+    }
+    .feature button {
+      background-color: #004080;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background-color 0.3s ease;
+      border-radius: 4px;
+    }
+    .feature button:hover {
+      background-color: #002f5f;
+    }
+    /* Legend styling for Resource Availability column (one line) */
+    .availability-legend {
+      font-size: 14px;
+      margin: 10px 0;
+      color: #003366;
+    }
+    .availability-legend p {
+      margin: 0;
+    }
+    /* Live map container styling */
+    #live-map {
+      width: 100%;
+      flex-grow: 1;
+      min-height: 150px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+    /* Footer */
+    footer {
+      background-color: #004080;
+      color: #fff;
+      padding: 15px;
+      text-align: center;
+      font-size: 16px;
+      margin-top: 30px;
+      border-top: 2px solid #003366;
+      animation: fadeIn 1s ease-in-out;
+    }
+    /* Keyframe Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes fadeInUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes backgroundShift {
+      from { filter: brightness(1); }
+      to { filter: brightness(1.05); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Disaster Relief Hub</h1>
+  </header>
+
+  <!-- Sidebar (Popup Dashboard) -->
+  <div id="sidebar" class="sidebar">
+    <a href="javascript:void(0)" class="closebtn" onclick="closeSidebar()">&times;</a>
+    <a href="homepage.html">Home</a>
+    <a href="about.html">About</a>
+    <a href="contact.html">Contact</a>
+  </div>
+  <!-- Open Sidebar Button showing only the hamburger icon -->
+  <button id="openSidebarBtn" onclick="openSidebar()">☰</button>
+
+  <section class="hero">
+    <h2>Find Emergency Assistance Near You</h2>
+    <h3>You’re not alone – we’re here to help.</h3>
+    <p>In case of emergencies, our platform helps you find nearby resources like hospitals, shelters, fire stations, and more.</p>
+    <button onclick="window.location.href='map.html'">Emergency Alert</button>
+  </section>
+
+  <section class="features">
+    <div class="feature">
+      <h3>Real-time Assistance</h3>
+      <p>Ask our chatbot about all the assistance you need regarding resources or any kind of help.</p>
+      <button onclick="window.location.href='map.html'">Locate Resources</button>
+    </div>
+    <div class="feature" id="map-feature">
+      <h3>Fast &amp; Easy Access</h3>
+      <p>Get immediate access to help centers nearby within seconds using your phone's GPS.</p>
+      <!-- Live map will be rendered here -->
+      <div id="live-map"></div>
+      <button onclick="window.location.href='map.html'">Locate the nearby help centers</button>
+    </div>
+    <div class="feature">
+      <h3>Resource Availability</h3>
+      <p>Our platform covers a wide range of resources, from food banks to fire stations.</p>
+      <!-- One-line legend explaining the color codes -->
+      <div class="availability-legend">
+        <p>Legend: <span style="color:#4CAF50;">Green = Available</span>, <span style="color:#FFEB3B;">Yellow = Limited Availability</span>, <span style="color:#F44336;">Red = Not Available</span></p>
+      </div>
+      <button onclick="window.location.href='resources.html'">Explore Resources</button>
+    </div>
+  </section>
+
+  <footer>
+    <p>&copy; 2025 Help &amp; Mitigation Center. All rights reserved.</p>
+  </footer>
+
+  <!-- Leaflet JS for the live map -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+          var lat = position.coords.latitude;
+          var lon = position.coords.longitude;
+          var map = L.map('live-map').setView([lat, lon], 13);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+          }).addTo(map);
+          L.marker([lat, lon]).addTo(map)
+            .bindPopup('You are here.')
+            .openPopup();
+        }, function(error) {
+          console.error("Geolocation error: " + error.message);
+          document.getElementById('live-map').innerHTML = "Unable to retrieve your location.";
+        });
+      } else {
+        console.error("Geolocation is not supported by this browser.");
+        document.getElementById('live-map').innerHTML = "Geolocation is not supported by your browser.";
+      }
+    });
+
+    function openSidebar() {
+      document.getElementById("sidebar").style.right = "0";
+    }
+
+    function closeSidebar() {
+      document.getElementById("sidebar").style.right = "-250px";
+    }
+  </script>
+</body>
+</html>
